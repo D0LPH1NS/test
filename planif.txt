@@ -2,3 +2,10 @@ Semaine 1:
 - Plan de cours
 - rappel
 - tests unitaires
+
+
+Semaine 2:
+
+- git
+- JList statique
+- JList Dynamique
