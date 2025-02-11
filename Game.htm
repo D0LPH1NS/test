@@ -20,8 +20,10 @@
             width: 100%;
             max-width: 1200px;
             padding: 2rem;
-            box-sizing: border-box;
             position: relative;
+            min-height: 80vh;
+            display: flex;
+            flex-direction: column;
         }
 
         .timer {
@@ -35,7 +37,6 @@
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 1rem;
-            transition: all 0.5s ease-in-out;
         }
 
         .player-score {
@@ -43,7 +44,6 @@
             padding: 2rem;
             border-radius: 15px;
             text-align: center;
-            transition: all 0.5s ease-in-out;
         }
 
         .player-name {
@@ -56,59 +56,45 @@
             font-weight: bold;
         }
 
-        .player-1 { border: 2px solid #2ecc71; }
-        .player-2 { border: 2px solid #3498db; }
-        .player-3 { border: 2px solid #9b59b6; }
-        .player-4 { border: 2px solid #e74c3c; }
-        .player-5 { border: 2px solid #e67e22; }
-        .player-6 { border: 2px solid #f1c40f; }
-
-        .winner-mode .player-score {
+        .winner-display {
             display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 2rem;
+            border-radius: 15px;
+            animation: winner-pulse 2s infinite;
         }
 
-        .winner-mode .player-score.winner {
-            display: block;
-            grid-column: 1 / -1;
-            grid-row: 1;
-            padding: 4rem;
-            font-size: 1.5em;
-            animation: winner-pulse 2s infinite;
+        .winner-display h1 {
+            font-size: 4rem;
+            color: gold;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        .winner-display p {
+            font-size: 2rem;
         }
 
         .replay-button {
             display: none;
-            position: absolute;
+            position: fixed;
             bottom: 2rem;
             left: 50%;
             transform: translateX(-50%);
-            padding: 1rem 2rem;
-            font-size: 1.2rem;
+            padding: 1rem 3rem;
+            font-size: 1.5rem;
             background: linear-gradient(45deg, #3498db, #2980b9);
             color: white;
-            border: none;
             border-radius: 50px;
-            cursor: pointer;
             text-decoration: none;
-            transition: transform 0.2s;
         }
 
         .replay-button:hover {
             transform: translateX(-50%) scale(1.1);
-        }
-
-        .winner-mode .replay-button {
-            display: block;
-        }
-
-        #confetti-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 1000;
         }
 
         @keyframes winner-pulse {
@@ -116,22 +102,9 @@
             50% { transform: scale(1.05); }
             100% { transform: scale(1); }
         }
-
-        @media (max-width: 768px) {
-            .scores {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        @media (max-width: 480px) {
-            .scores {
-                grid-template-columns: 1fr;
-            }
-        }
     </style>
 </head>
 <body>
-    <canvas id="confetti-canvas"></canvas>
     <div class="container">
         <div class="timer" id="timer">60</div>
         <div class="scores" id="scores">
@@ -160,8 +133,56 @@
                 <div class="score" id="score6">0</div>
             </div>
         </div>
-        <a href="/" class="replay-button">Rejouer</a>
     </div>
 
-    <audio id="victory-sound" preload="auto">
-        <source src="data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQwAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAASAAAhIQAYGBgYJSUlJSUyMjIyMj8/Pz8/TExMTExZWVlZWWZmZmZmc3Nzc3OAgICAgI2NjY2Nmpqampqnpqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampqampq
+    <div class="winner-display" id="winner-display">
+        <h1>🏆 VICTOIRE! 🏆</h1>
+        <p id="winner-text">Joueur X</p>
+    </div>
+
+    <a href="/" class="replay-button" id="replay-button">Rejouer</a>
+
+    <script>
+        function updateScores() {
+            fetch('/scores')
+                .then(response => response.text())
+                .then(data => {
+                    let lines = data.split('\n');
+                    document.getElementById('timer').innerText = lines[0].split(':')[1];
+
+                    let highestScore = -Infinity;
+                    let winnerId = 0;
+
+                    lines.slice(1).forEach(line => {
+                        if (line.startsWith('Joueur')) {
+                            let parts = line.split(': ');
+                            let playerNum = parts[0].split(' ')[1];
+                            let scoreNum = parseInt(parts[1]);
+                            document.getElementById(`score${playerNum}`).textContent = scoreNum;
+
+                            if (scoreNum > highestScore) {
+                                highestScore = scoreNum;
+                                winnerId = playerNum;
+                            }
+                        }
+                    });
+
+                    if (document.getElementById('timer').innerText === "0") {
+                        showWinner(winnerId, highestScore);
+                    }
+                });
+        }
+
+        function showWinner(playerId, score) {
+            document.getElementById('scores').style.opacity = '0.3';
+            const winnerDisplay = document.getElementById('winner-display');
+            document.getElementById('winner-text').textContent = `Joueur ${playerId} (${score} points)`;
+            winnerDisplay.style.display = 'block';
+            document.getElementById('replay-button').style.display = 'block';
+        }
+
+        setInterval(updateScores, 1000);
+        window.onload = updateScores;
+    </script>
+</body>
+</html>

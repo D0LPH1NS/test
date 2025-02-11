@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Jeu en Équipe</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1a1a1a, #4a4a4a);
+            color: white;
+            text-align: center;
+            min-height: 100vh;
+        }
+
+        .container { padding: 2rem; }
+        .team { font-size: 2rem; margin: 20px 0; }
+        .score { font-size: 3rem; font-weight: bold; }
+        .timer { font-size: 3rem; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="timer" id="timer">60</div>
+        <div class="team">
+            <h2>Équipe 1 (Joueurs 1, 2, 3)</h2>
+            <div class="score" id="team1-score">0</div>
+        </div>
+        <div class="team">
+            <h2>Équipe 2 (Joueurs 4, 5, 6)</h2>
+            <div class="score" id="team2-score">0</div>
+        </div>
+    </div>
+
+    <script>
+        function updateScores() {
+            fetch('/scores')
+                .then(response => response.text())
+                .then(data => {
+                    let lines = data.split('\n');
+                    document.getElementById('timer').innerText = lines[0].split(':')[1];
+
+                    let team1Score = 0;
+                    let team2Score = 0;
+
+                    lines.slice(1).forEach(line => {
+                        if (line.startsWith('Joueur')) {
+                            let parts = line.split(': ');
+                            let playerNum = parseInt(parts[0].split(' ')[1]);
+                            let scoreNum = parseInt(parts[1]);
+
+                            if (playerNum <= 3) team1Score += scoreNum;
+                            else team2Score += scoreNum;
+                        }
+                    });
+
+                    document.getElementById('team1-score').textContent = team1Score;
+                    document.getElementById('team2-score').textContent = team2Score;
+                });
+        }
+
+        setInterval(updateScores, 1000);
+        window.onload = updateScores;
+    </script>
+</body>
+</html>

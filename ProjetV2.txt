@@ -2,209 +2,141 @@
 #include <Ethernet.h>
 #include <SD.h>
 #include <FastLED.h>
+#include <TMRpcm.h>
 
 #define NUM_LEDS 30
 #define DATA_PIN 6
-#define BUZZER_PIN 5
 CRGB leds[NUM_LEDS];
 
+TMRpcm audio;
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
 IPAddress ip(192, 168, 0, 177);
 
-const int buttonPins[6] = {A0, A1, A4, A5, 8, 9};
-const CRGB playerColors[6] = {
-  CRGB::Green,  // Joueur 1 - Gain
-  CRGB::Blue,   // Joueur 2 - Gain
-  CRGB::Purple, // Joueur 3 - Gain
-  CRGB::Red,    // Joueur 4 - Perte
-  CRGB::Orange, // Joueur 5 - Perte
-  CRGB::Yellow  // Joueur 6 - Perte
-};
-
+const int buttonPins[] = {A0, A1, A4, A5, 8, 9};  // Pins des boutons
 EthernetServer server(80);
 bool gameActive = false;
 unsigned long startTime;
-unsigned long lastColorChange = 0;
 int scores[6] = {0};
-int remainingTime = 60; // Chronomètre de 60 secondes
-int tempo = 150;
-int melody[] = {262, 294, 330, 349, 392, 440, 494, 523};
-int noteIndex = 0;
+int remainingTime = 60;
+int gameMode = 1;
 
 void setup() {
-  Serial.begin(9600);
-  Ethernet.begin(mac, ip);
-  server.begin();
-  SD.begin(4);
-  FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS);
-  
-  for(int i = 0; i < 6; i++) {
-    pinMode(buttonPins[i], INPUT_PULLUP);
-  }
-  pinMode(BUZZER_PIN, OUTPUT);
-  
-  initLEDs();
+    Serial.begin(9600);
+    Ethernet.begin(mac, ip);
+    server.begin();
+    SD.begin(4);
+    FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS);
+    audio.speakerPin = 9;
+
+    for (uint8_t i = 0; i < 6; i++) pinMode(buttonPins[i], INPUT_PULLUP);
 }
 
 void loop() {
-  EthernetClient client = server.available();
-  if(client) handleClient(client);
-  
-  if(gameActive) {
-    updateGame();
-    checkButtons();
-    playMelody();
-    changeLEDColors();
-  }
+    EthernetClient client = server.available();
+    if (client) handleClient(client);
+
+    if (gameActive) {
+        updateGame();
+        checkButtons();
+    }
 }
 
 void handleClient(EthernetClient client) {
-  String request = client.readStringUntil('\r');
-  
-  if(request.indexOf("GET /start") != -1) {
-    startGame();
-    sendFile(client, "Game.htm");  // Redirige vers la page de jeu
-  }
-  else if(request.indexOf("GET /game") != -1) {
-    sendFile(client, "Game.htm");
-  }
-  else if(request.indexOf("GET /scores") != -1) {
-    sendScores(client);
-  }
-  else {
-    sendFile(client, "Accueil.htm");
-  }
-  
-  delay(1);
-  client.stop();
+    String request = client.readStringUntil('\r');
+
+    if (request.indexOf(F("GET /mode1")) != -1) {
+        startGame(1);
+        redirectClient(client, F("/game"));
+    } 
+    else if (request.indexOf(F("GET /mode2")) != -1) {
+        startGame(2);
+        redirectClient(client, F("/equipe"));
+    }
+    else if (request.indexOf(F("GET /scores")) != -1) {
+        sendScores(client);
+    }
+    else if (request.indexOf(F("GET /equipe")) != -1) {
+        sendFile(client, F("Equipe.htm"));
+    }
+    else {
+        sendFile(client, gameActive ? F("Game.htm") : F("Accueil.htm"));
+    }
+    client.stop();
 }
 
-void startGame() {
-  gameActive = true;
-  startTime = millis();
-  remainingTime = 60;
-  memset(scores, 0, sizeof(scores));
-  initLEDs();
-  FastLED.show();
+// Fonction pour rediriger vers une autre page
+void redirectClient(EthernetClient client, const __FlashStringHelper* location) {
+    client.println(F("HTTP/1.1 303 See Other"));
+    client.print(F("Location: "));
+    client.println(location);
+    client.println();
+}
+
+void startGame(int mode) {
+    gameActive = true;
+    startTime = millis();
+    remainingTime = 60;
+    gameMode = mode;
+    memset(scores, 0, sizeof(scores));
+
+    audio.play("music.mp3");
 }
 
 void updateGame() {
-  unsigned long elapsed = millis() - startTime;
-  
-  // Met à jour le temps restant
-  remainingTime = 60 - (elapsed / 1000);
-  
-  // Accélère la musique à 15 secondes restantes
-  if(remainingTime <= 15) {
-    tempo = 75;
-  }
-  
-  // Termine le jeu si le temps est écoulé
-  if(remainingTime <= 0) {
-    endGame();
-  }
+    unsigned long elapsed = (millis() - startTime) / 1000;
+    if (elapsed >= 60) endGame();
+    else remainingTime = 60 - elapsed;
 }
 
 void checkButtons() {
-  for(int i = 0; i < 6; i++) {
-    // Vérifie si le bouton est pressé (LOW car les boutons sont en INPUT_PULLUP)
-    if(digitalRead(buttonPins[i]) == LOW) {
-      // Si le bouton est pressé, met à jour le score
-      if(i < 3) {
-        scores[i]++; // Gain de points pour les joueurs 1 à 3
-      } else {
-        scores[i]--; // Perte de points pour les joueurs 4 à 6
-      }
-      delay(50); // Anti-rebond
+    for (uint8_t i = 0; i < 6; i++) {
+        if (digitalRead(buttonPins[i]) == LOW) scores[i]++;
     }
-  }
 }
 
-void playMelody() {
-  static unsigned long lastNote = 0;
-  
-  if(millis() - lastNote > tempo) {
-    tone(BUZZER_PIN, melody[noteIndex], tempo / 2);
-    noteIndex = (noteIndex + 1) % 8;
-    lastNote = millis();
-  }
-}
-
-void changeLEDColors() {
-  if(millis() - lastColorChange >= 500) { // Change les couleurs toutes les 500 ms
-    for(int i = 0; i < NUM_LEDS; i++) {
-      leds[i] = playerColors[random(6)]; // Choisit une couleur aléatoire parmi les 6
+void sendFile(EthernetClient client, const __FlashStringHelper* filename) {
+    File file = SD.open((const char*) filename);
+    if (file) {
+        client.println(F("HTTP/1.1 200 OK"));
+        client.println(F("Content-Type: text/html"));
+        client.println();
+        while (file.available()) client.write(file.read());
+        file.close();
+    } else {
+        client.println(F("HTTP/1.1 404 Not Found"));
+        client.println(F("<h1>404 - Fichier non trouvé</h1>"));
     }
-    FastLED.show();
-    lastColorChange = millis();
-  }
-}
-
-void sendFile(EthernetClient client, String filename) {
-  File file = SD.open(filename);
-  
-  if (file) {
-    client.println("HTTP/1.1 200 OK");
-    client.println("Content-Type: text/html");
-    client.println();
-    
-    while(file.available()) {
-      client.write(file.read());
-    }
-    file.close();
-  } else {
-    client.println("HTTP/1.1 404 Not Found");
-    client.println("Content-Type: text/html");
-    client.println();
-    client.println("<h1>404 - File Not Found</h1>");
-  }
 }
 
 void sendScores(EthernetClient client) {
-  client.println("HTTP/1.1 200 OK");
-  client.println("Content-Type: text/plain");
-  client.println();
-  
-  // Envoie le temps restant
-  client.print("TIME:");
-  client.println(remainingTime);
-  
-  // Envoie les scores des joueurs
-  for(int i = 0; i < 6; i++) {
-    client.print("Joueur ");
-    client.print(i + 1);
-    client.print(": ");
-    client.println(scores[i]);
-  }
-  
-  // Envoie le gagnant si le jeu est terminé
-  if(!gameActive) {
-    int winner = 0;
-    for(int i = 1; i < 6; i++) {
-      if(scores[i] > scores[winner]) winner = i;
-    }
-    client.print("WINNER:");
-    client.print(winner + 1);
-  }
-}
+    client.println(F("HTTP/1.1 200 OK"));
+    client.println(F("Content-Type: text/plain"));
+    client.println();
+    
+    client.print(F("TIME:"));
+    client.println(remainingTime);
+    
+    int team1Score = scores[0] + scores[1] + scores[2];
+    int team2Score = scores[3] + scores[4] + scores[5];
 
-void initLEDs() {
-  for(int i = 0; i < 6; i++) {
-    for(int j = 0; j < 4; j++) {
-      leds[i * 4 + j] = playerColors[i];
+    for (uint8_t i = 0; i < 6; i++) {
+        client.print(F("Joueur "));
+        client.print(i + 1);
+        client.print(F(": "));
+        client.println(scores[i]);
     }
-  }
-  FastLED.show();
+
+    if (gameMode == 2) { // Mode équipe
+        client.print(F("ÉQUIPE 1:"));
+        client.println(team1Score);
+        client.print(F("ÉQUIPE 2:"));
+        client.println(team2Score);
+    }
 }
 
 void endGame() {
-  gameActive = false;
-  noTone(BUZZER_PIN);
-  FastLED.clear();
-  FastLED.show();
-}
-
-void resetGame() {
-  gameActive = false;
-  initLEDs();
+    gameActive = false;
+    audio.stopPlayback();
+    FastLED.clear();
+    FastLED.show();
 }
