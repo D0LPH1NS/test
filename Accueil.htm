@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Accueil - Jeu</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1a1a1a, #4a4a4a);
+            color: white;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            text-align: center;
+            padding: 2rem;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+
+        .start-button {
+            display: inline-block;
+            padding: 1rem 2rem;
+            font-size: 1.5rem;
+            text-decoration: none;
+            color: white;
+            background: linear-gradient(45deg, #2ecc71, #27ae60);
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .start-button:hover {
+            transform: scale(1.1);
+        }
+
+        .player-colors {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .color-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Bienvenue au Jeu</h1>
+        <a href="/start" class="start-button">Commencer la partie</a>
+        
+        <div class="player-colors">
+            <div class="color-dot" style="background: #2ecc71;"></div>
+            <div class="color-dot" style="background: #3498db;"></div>
+            <div class="color-dot" style="background: #9b59b6;"></div>
+            <div class="color-dot" style="background: #e74c3c;"></div>
+            <div class="color-dot" style="background: #e67e22;"></div>
+            <div class="color-dot" style="background: #f1c40f;"></div>
+        </div>
+    </div>
+</body>
+</html>
